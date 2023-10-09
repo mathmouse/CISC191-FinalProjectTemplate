@@ -121,10 +121,6 @@ public class Server extends Application {
         VBox homeworkAdding = homeworkPopup.getHomeworkAdding(inputHomeworkName, urgentCheck, inputDueDate, subjectBox);
         homeworkPopup.getContent().addAll(homeworkAdding);
 
-        
-         * creates a new homework entry
-         * @pa
-         */
         homeworkButton.setOnAction(e -> {
             if (!homeworkPopup.isShowing()) {
                 homeworkPopup.show(stage);
@@ -201,6 +197,16 @@ public class Server extends Application {
                         snackButton.setVisible(true);
                     }
                 });
+
+                // Edit by Lihua Zhang: Remove old keyframe if it exists
+                if (timeline != null) {
+                    timeline.stop();
+                    timeline.getKeyFrames().removeAll(timeline.getKeyFrames());
+                }
+                minutes = secondsTotal / 60;
+                seconds = secondsTotal % 60;
+                timerLabel.setText(String.format("%02d", minutes) + ":" + String.format("%02d", seconds));
+
                 timeline.getKeyFrames().add(keyFrame);
                 timeline.setCycleCount(secondsTotal);
                 timeline.play();
