@@ -51,6 +51,8 @@ public class Client extends Application {
     private final Dessert dessert = new Dessert();
     private final HomeworkTable<Homework> homeworkTable = new HomeworkTable<>();
     private static final AppButton subjectSubmit = new AppButton();
+
+    private final AppButton pauseButton = new AppButton();
     private static final AppButton homeworkSubmit = new AppButton();
     private static final AppButton timerSubmit = new AppButton();
     private final String[] drinkArray = {"Green Tea", "Black Tea", "Herbal Tea"};
@@ -92,6 +94,7 @@ public class Client extends Application {
         dessertButton.setText("Sweet");
         homeworkButton.setText("New Homework");
         saveNotes.setText("Save Notes");
+        pauseButton.setText("Pause");
 
         //set presets for visibility
         snackButton.setVisible(false);
@@ -118,7 +121,7 @@ public class Client extends Application {
         HBox timerRow = new HBox(10, timerButton, timerLabel, studyMessage, snackButton, saveNotes);
         HBox homeworkRow = new HBox(10,subjectButton, homeworkButton);
         HBox buttonBar = new HBox(10, homeworkRow, timerRow);
-        HBox homeworkBar = new HBox(15, homeworkLabel, completedLabel, completedCheck);
+        HBox homeworkBar = new HBox(15, homeworkLabel, completedLabel, completedCheck, pauseButton);
         VBox homeworkBox = new VBox(5, homeworkBar, homeworkTable);
         VBox notesBox = new VBox(9, notesLabel, notesArea);
         HBox centerConsole = new HBox(5,homeworkBox, notesBox);
@@ -156,6 +159,16 @@ public class Client extends Application {
         notesArea.setText(input);
         notesReader.close();
 
+        pauseButton.setOnAction(event -> {
+            if (timeline.getStatus() == Timeline.Status.RUNNING) {
+                timeline.pause(); // Pause the timer
+                studyMessage.setText("Timer Paused");
+                pauseButton.setText("play");
+            } else {
+                timeline.play(); // Resume the timer
+                studyMessage.setText("Time to Study!");
+            }
+        });
         //saves notes to text file
         saveNotes.setOnAction(event -> {
             try {
