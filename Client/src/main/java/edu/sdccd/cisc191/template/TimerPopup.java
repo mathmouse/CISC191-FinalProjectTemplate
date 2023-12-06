@@ -2,6 +2,7 @@ package edu.sdccd.cisc191.template;
 
 import javafx.animation.KeyFrame;
 import javafx.geometry.Insets;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
@@ -22,16 +23,20 @@ public class TimerPopup extends Popup {
      * @return seconds in total for timer to run
      */
     public int getSecondsTotal(TextField inputTimerMinutes) {
-
-        if (inputTimerMinutes.getText().equals("")) {
+        try {
+            if (inputTimerMinutes.getText().equals("")) {
+                secondsTotal = 1;
+            } else {
+                time.setSecondsTotal(Integer.parseInt(inputTimerMinutes.getText()));
+                secondsTotal = time.getSecondsTotal();
+            }
+        }catch (NumberFormatException e) {
+            // Handle non-numeric input gracefully, show an alert, for example
+            showErrorAlert("Invalid Input", "Please enter a valid numeric value for minutes.");
             secondsTotal = 1;
         }
-
-        else {
-            time.setSecondsTotal(Integer.parseInt(inputTimerMinutes.getText()));
-            secondsTotal = time.getSecondsTotal();
-        }
         return secondsTotal;
+
     }
 
     /**
@@ -47,5 +52,13 @@ public class TimerPopup extends Popup {
         timerAdding.setStyle("-fx-background-color: #F5F2E3; -fx-border-color: #E6C8EC;-fx-border-width:5");
         timerAdding.setPadding(new Insets(10));
         return timerAdding;
+    }
+
+    private void showErrorAlert(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }
