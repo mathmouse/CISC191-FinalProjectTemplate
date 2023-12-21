@@ -72,7 +72,7 @@ public class Client extends Application {
     @Override
     public void start(Stage stage) throws Exception {
 
-        // opens connection to server to receive a quote to display
+        //Opens connection to server to receive a quote to display
         Socket clientSocket;
         try {
             clientSocket = new Socket("localhost", 8000);
@@ -84,7 +84,7 @@ public class Client extends Application {
         String quote = (String) in.readObject();
         clientSocket.close();
 
-        //set label text, prompt text and button text
+        //Set label text, prompt text and button text
         homeworkLabel.setText("Homework");
         notesLabel.setText("Notes");
         newHomework.setText("New Homework");
@@ -104,11 +104,11 @@ public class Client extends Application {
         homeworkButton.setText("New Homework");
         saveNotes.setText("Save Notes");
 
-        //set presets for visibility
+        //Set presets for visibility
         snackButton.setVisible(false);
         drinkLabel.setVisible(false);
 
-        //set table columns
+        //Set table columns
         homeworkTable.setEditable(true);
         TableColumn<Homework, String> subjectColumn = new TableColumn<>("Subject");
         subjectColumn.setMinWidth(120);
@@ -124,7 +124,7 @@ public class Client extends Application {
         urgentColumn.setCellValueFactory(new PropertyValueFactory<>("urgent"));
         homeworkTable.getColumns().addAll(subjectColumn, nameColumn, dateColumn, urgentColumn);
 
-        //set BorderPane and Boxes for layout
+        //Set BorderPane and Boxes for layout
         BorderPane root = new BorderPane();
         HBox timerRow = new HBox(10, timerButton, timerLabel, studyMessage, snackButton, saveNotes);
         HBox homeworkRow = new HBox(10,subjectButton, homeworkButton);
@@ -135,16 +135,16 @@ public class Client extends Application {
         HBox centerConsole = new HBox(5,homeworkBox, notesBox);
         HBox topLabels = new HBox(10, quoteLabel, alertLabel);
 
-        //set preferred size for table and notes area
+        //Set preferred size for table and notes area
         notesArea.setPrefSize(400,400);
         homeworkTable.setPrefSize(500,400);
 
-        //organize components in the Border Pane
+        //Organize components in the Border Pane
         root.setTop(topLabels);
         root.setCenter(centerConsole);
         root.setBottom(buttonBar);
 
-        //add padding around the components
+        //Add padding around the components
         BorderPane.setMargin(topLabels, new Insets(10, 10, 5, 10));
         BorderPane.setMargin(centerConsole, new Insets(5, 10, 5, 10));
         BorderPane.setMargin(buttonBar, new Insets(5, 10, 10, 10));
@@ -153,7 +153,7 @@ public class Client extends Application {
         root.setStyle("-fx-background-color: #F2E3F5");
         notesArea.setStyle("-fx-border-color: #E6F5E3; -fx-border-width: 5; -fx-background-color: #E6F5E3");
 
-        //load notes from text file to app
+        //Load notes from text file to app
         File notesFile = new File("notes.txt");
         Scanner notesReader = new Scanner(notesFile);
         String input = "";
@@ -168,7 +168,7 @@ public class Client extends Application {
         notesArea.setText(input);
         notesReader.close();
 
-        //saves notes to text file
+        //Saves notes to text file
         saveNotes.setOnAction(event -> {
             try {
                 FileWriter notesWriter = new FileWriter("notes.txt", false);
@@ -180,18 +180,18 @@ public class Client extends Application {
             }
         });
 
-        //adds previously created homework to the app
+        //Adds previously created homework to the app
         BufferedReader homeworkReader = new BufferedReader(new FileReader("homework.txt"));
         try {
             String line;
-            //search for dashes separating types of homework information to create substrings later
+            //Search for dashes separating types of homework information to create substrings later
             int[] indexesOfDash = new int[4];
             while ((line = homeworkReader.readLine()) != null) {
                 indexesOfDash[0] = line.indexOf("--");
                 for (int i = 1; i < 4; i++) {
                     indexesOfDash[i] = line.indexOf("--", indexesOfDash[i - 1] + 1);
                 }
-                //from line, returns a string of information
+                //From line, returns a string of information
                 String name = line.substring(0, indexesOfDash[0]);
                 String subject = line.substring(indexesOfDash[0]+2, indexesOfDash[1]);
                 boolean urgent = Boolean.parseBoolean(line.substring(indexesOfDash[1]+2, indexesOfDash[2]));
@@ -210,7 +210,7 @@ public class Client extends Application {
         VBox homeworkAdding = homeworkPopup.getHomeworkAdding(inputHomeworkName, urgentCheck, inputDueDate, subjectBox, homeworkSubmit);
         homeworkPopup.getContent().addAll(homeworkAdding);
 
-        //remove selected homework
+        //Remove selected homework
         completedCheck.setOnAction(e -> {
             int index = homeworkTable.getSelectionModel().getSelectedIndex();
             if (index != -1 && completedCheck.isSelected()) {
@@ -235,7 +235,7 @@ public class Client extends Application {
             }
         });
 
-        //creates a new homework entry
+        //Creates a new homework entry
         homeworkButton.setOnAction(e -> {
             if (!homeworkPopup.isShowing()) {
                 homeworkPopup.show(stage);
@@ -244,16 +244,16 @@ public class Client extends Application {
                 homeworkSubmit.setOnAction(e2 -> {
                     homeworkPopup.hide();
                     homeworkButton.setText("New Homework");
-                    //get the homework entry information
+                    //Get the homework entry information
                     String name = homeworkPopup.getName(inputHomeworkName);
                     String subject = homeworkPopup.getSubject(subjectBox);
                     boolean urgent = homeworkPopup.getUrgent(urgentCheck);
                     String date = homeworkPopup.getDate(inputDueDate);
-                    //create a new homework entry with data inputted/selected by user
+                    //Create a new homework entry with data inputted/selected by user
                     Homework newHwEntry = new Homework(name, subject, urgent, date);
-                    //adds new homework entry to homeworkTable
+                    //Adds new homework entry to homeworkTable
                     homeworkTable.getItems().add(newHwEntry);
-                    ///add homework to text file, separating pieces of data by using dashes
+                    //Add homework to text file, separating pieces of data by using hyphens
                     try {
                         FileWriter writer = new FileWriter("homework.txt",true);
                         writer.write(name + "--" + subject + "--" + urgent + "--" + date + '\n');
@@ -261,25 +261,24 @@ public class Client extends Application {
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
-                    //reset the values
+                    //Reset the values
                     homeworkPopup.reset(inputHomeworkName, urgentCheck, inputDueDate, subjectBox);
                 });
             }
             else {
                 homeworkPopup.hide();
                 homeworkButton.setText("New Homework");
-                //reset the values
+                //Reset the values
                 homeworkPopup.reset(inputHomeworkName, urgentCheck, inputDueDate, subjectBox);
             }
         });
-
 
         //Subject popup
         SubjectPopup subjectPopup = new SubjectPopup();
         VBox subjectAdding = subjectPopup.getSubjectAdding(inputSubjectName, inputSubjectNumber, subjectSubmit);
         subjectPopup.getContent().addAll(subjectAdding);
 
-        //adds previously created subjects to the subject combobox
+        //Adds previously created subjects to the subject combobox
         BufferedReader subjectReader = new BufferedReader(new FileReader("subject.txt"));
         try {
             String line;
@@ -293,20 +292,20 @@ public class Client extends Application {
         }
         subjectReader.close();
 
-        //creates a new subject and saves it to the ComboBox
+        //Creates a new subject and saves it to the ComboBox
         subjectButton.setOnAction(e -> {
             if (!subjectPopup.isShowing()) {
                 subjectPopup.show(stage);
                 subjectButton.setText("Cancel");
                 subjectSubmit.setText("Create");
-                //handles actions when Submit button is pressed
+                //Handles actions when Submit button is pressed
                 subjectSubmit.setOnAction(e2 -> {
                     userSubject.setSubjectName(inputSubjectName.getText());
                     userSubject.setSubjectNumber(inputSubjectNumber.getText());
                     subjectBox.getItems().add(userSubject.getSubject());
                     subjectButton.setText("New Subject");
                     subjectPopup.hide();
-                    //write new subject to text file to be used later
+                    //Write new subject to text file to be used later
                     try {
                         FileWriter writer = new FileWriter("subject.txt", true);
                         writer.write(inputSubjectName.getText() + "--" + inputSubjectNumber.getText() + '\n');
@@ -323,12 +322,12 @@ public class Client extends Application {
             }
         });
 
-        //timer popup
+        //Timer popup
         TimerPopup timerPopup = new TimerPopup();
         VBox timerAdding = timerPopup.getTimerAdding(inputTimerMinutes, timerSubmit);
         timerPopup.getContent().add(timerAdding);
 
-        //sets timer in minutes and timer label in mm:ss
+        //Sets timer in minutes and timer label in mm:ss
         timerSubmit.setOnAction(e -> {
             switch(timerPopup.getState()) {
                 case CONFIGURING:
@@ -340,7 +339,8 @@ public class Client extends Application {
                     minutes = secondsTotal / 60;
                     seconds = secondsTotal % 60;
                     timerLabel.setText(String.format("%02d", minutes) + ":" + String.format("%02d", seconds));
-                    //updates time left every second
+
+                    //Updates time left every second
                     KeyFrame keyFrame = new KeyFrame(Duration.seconds(1), event -> {
                         secondsTotal--;
                         minutes = secondsTotal / 60;
@@ -360,9 +360,9 @@ public class Client extends Application {
                                         }
                                         //Allows for GUI update
                                         Platform.runLater(() -> alertLabel.setText(alertText));
-                                        //controls the speed of the blinking
+                                        //Controls the speed of the blinking
                                         Thread.sleep(200);
-                                        //stop the blinking once timer reaches 0
+                                        //Stop the blinking once timer reaches 0
                                         if (secondsTotal == 0) {
                                             Thread.currentThread().interrupt();
                                             return;
@@ -395,7 +395,7 @@ public class Client extends Application {
             }
         });
 
-        //sets timer in minutes and timer label in mm:ss
+        //Sets timer in minutes and timer label in mm:ss
         timerButton.setOnAction(e -> {
             switch(timerPopup.getState()) {
                 case NOTHING:
@@ -419,22 +419,22 @@ public class Client extends Application {
             }
         });
 
-        //snack popup
+        //Snack popup
         SnackPopup snackPopup = new SnackPopup();
         HBox sandwichOrDessertRow = snackPopup.getSandwichOrDessert(sandwichButton, dessertButton);
         VBox snackPopupColumn = snackPopup.getSnackPopupColumn(sandwichOrDessertRow, snackLabel, drinkLabel);
         snackPopup.getContent().add(snackPopupColumn);
 
-        //setup drink binary tree
+        //Setup drink binary tree
         for (String s : drinkArray) {
             drinkTree.insertDrink(s);
         }
 
-        //create a new snack
+        //Create a new snack
         this.snackButton.setOnAction((e) -> {
             if (!snackPopup.isShowing()) {
                 snackPopup.show(stage);
-                //create a savory sandwich
+                //Create a savory sandwich
                 snackButton.setText("Exit Generator");
                 sandwichButton.setOnAction((event) -> {
                     sandwichOrDessertRow.setVisible(false);
@@ -442,7 +442,7 @@ public class Client extends Application {
                     drinkLabel.setVisible(true);
                     drinkLabel.setText("Enjoy it with some " + drinkTree.getDrink());
                 });
-                //create a sweet dessert
+                //Create a sweet dessert
                 dessertButton.setOnAction((event) -> {
                     sandwichOrDessertRow.setVisible(false);
                     snackLabel.setText(this.dessert.getSnack());
@@ -456,7 +456,7 @@ public class Client extends Application {
             }
         });
 
-        //create main scene
+        //Create main scene
         Scene scene = new Scene(root);
         stage.setScene(scene);
         stage.setTitle("Homework App");
