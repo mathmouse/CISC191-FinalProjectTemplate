@@ -3,11 +3,14 @@ package edu.sdccd.cisc191;
 import org.junit.jupiter.api.Test;
 import edu.sdccd.cisc191.template.*;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.io.*;
 import java.net.Socket;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class ClientTest {
     @Test
@@ -64,6 +67,42 @@ public class ClientTest {
         drinkTree.insertDrink("Fruit Tea");
         drink = drinkTree.getDrink();
         assertEquals("Fruit Tea", drink);
+    }
+    @Test
+    void testStreamHwData() {
+        //test if string stream hwData executes filter and forEach
+        Homework hw1 = new Homework("testName","testSubject", true, "testDate");
+        Homework hw2 = new Homework("testName2", "testSubject2", false, "testDate2");
+        //adds test homework to homework.txt
+        try {
+            FileWriter writer = new FileWriter("homework.txt",true);
+            writer.write(hw1.getHomeworkString() + '\n');
+            writer.write(hw2.getHomeworkString());
+            writer.close();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+        //uses same code from client to delete test homework from homework.txt
+        try {
+            String test = "";
+            BufferedReader deleteReader = new BufferedReader(new FileReader("homework.txt"));
+            Stream<String> hwDataStream = deleteReader.lines();
+            String hwData = hwDataStream.collect(Collectors.joining("\n"));
+            String[] lines = hwData.split("\n", -1);
+            FileWriter deleteWriter = new FileWriter("homework.txt", false);
+            int index = 0;
+            for (int i = 0; i < lines.length; i++) {
+                if (i != index) {
+                    test += lines[i] + '\n';
+                    deleteWriter.write(lines[i] + '\n');
+                }
+            }
+            assertEquals("StringProperty [value: testName2] --StringProperty [value: testSubject2]--false--StringProperty [value: testDate2]\n", test);
+            deleteReader.close();
+            deleteWriter.close();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
 }

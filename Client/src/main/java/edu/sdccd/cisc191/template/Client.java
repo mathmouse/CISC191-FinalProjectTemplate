@@ -12,10 +12,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-
+import javafx.application.Platform;
 import java.io.*;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Client extends Application {
     private final AppLabel quoteLabel = new AppLabel();
@@ -56,6 +59,8 @@ public class Client extends Application {
     private final String[] drinkArray = {"Green Tea", "Black Tea", "Herbal Tea"};
     private final DrinkTree drinkTree = new DrinkTree();
     private final AppButton saveNotes = new AppButton();
+    private String alertText = "";
+    private final AppLabel alertLabel = new AppLabel();
 
     public Client() {
     }
@@ -68,7 +73,13 @@ public class Client extends Application {
     public void start(Stage stage) throws Exception {
 
         // opens connection to server to receive a quote to display
-        Socket clientSocket = new Socket("localhost", 8000);
+        Socket clientSocket;
+        try {
+            clientSocket = new Socket("localhost", 8000);
+        } catch(ConnectException e) {
+            System.err.println("Backend is not started");
+            return;
+        }
         ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
         String quote = (String) in.readObject();
         clientSocket.close();
@@ -122,18 +133,19 @@ public class Client extends Application {
         VBox homeworkBox = new VBox(5, homeworkBar, homeworkTable);
         VBox notesBox = new VBox(9, notesLabel, notesArea);
         HBox centerConsole = new HBox(5,homeworkBox, notesBox);
+        HBox topLabels = new HBox(10, quoteLabel, alertLabel);
 
         //set preferred size for table and notes area
         notesArea.setPrefSize(400,400);
         homeworkTable.setPrefSize(500,400);
 
         //organize components in the Border Pane
-        root.setTop(quoteLabel);
+        root.setTop(topLabels);
         root.setCenter(centerConsole);
         root.setBottom(buttonBar);
 
         //add padding around the components
-        BorderPane.setMargin(quoteLabel, new Insets(10, 10, 5, 10));
+        BorderPane.setMargin(topLabels, new Insets(10, 10, 5, 10));
         BorderPane.setMargin(centerConsole, new Insets(5, 10, 5, 10));
         BorderPane.setMargin(buttonBar, new Insets(5, 10, 10, 10));
 
@@ -202,9 +214,23 @@ public class Client extends Application {
         completedCheck.setOnAction(e -> {
             int index = homeworkTable.getSelectionModel().getSelectedIndex();
             if (index != -1 && completedCheck.isSelected()) {
-                //TODO remove selected homework from homework.txt
-                //Homework selectedHomework = homeworkTable.getSelectionModel().getSelectedItem();
                 homeworkTable.getItems().remove(index);
+                try {
+                    BufferedReader deleteReader = new BufferedReader(new FileReader("homework.txt"));
+                    Stream<String> hwDataStream = deleteReader.lines();
+                    String hwData = hwDataStream.collect(Collectors.joining("\n"));
+                    String[] lines = hwData.split("\n", -1);
+                    FileWriter deleteWriter = new FileWriter("homework.txt", false);
+                    for (int i = 0; i < lines.length; i++) {
+                        if (i != index) {
+                            deleteWriter.write(lines[i] + '\n');
+                        }
+                    }
+                    deleteReader.close();
+                    deleteWriter.close();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
                 completedCheck.setSelected(false);
             }
         });
@@ -246,6 +272,7 @@ public class Client extends Application {
                 homeworkPopup.reset(inputHomeworkName, urgentCheck, inputDueDate, subjectBox);
             }
         });
+
 
         //Subject popup
         SubjectPopup subjectPopup = new SubjectPopup();
@@ -302,38 +329,93 @@ public class Client extends Application {
         timerPopup.getContent().add(timerAdding);
 
         //sets timer in minutes and timer label in mm:ss
-        timerButton.setOnAction(e -> {
-            if (!timerPopup.isShowing()) {
-                timerPopup.show(stage);
-                timerButton.setText("Cancel");
-                snackButton.setVisible(false);
-                timerSubmit.setOnAction(e2 -> {
+        timerSubmit.setOnAction(e -> {
+            switch(timerPopup.getState()) {
+                case CONFIGURING:
                     timerPopup.hide();
                     secondsTotal = timerPopup.getSecondsTotal(inputTimerMinutes);
                     inputTimerMinutes.clear();
-                    timerButton.setText("Timer");
+                    timerButton.setText("Cancel");
                     studyMessage.setText("Time to Study!");
+                    minutes = secondsTotal / 60;
+                    seconds = secondsTotal % 60;
+                    timerLabel.setText(String.format("%02d", minutes) + ":" + String.format("%02d", seconds));
                     //updates time left every second
                     KeyFrame keyFrame = new KeyFrame(Duration.seconds(1), event -> {
                         secondsTotal--;
                         minutes = secondsTotal / 60;
                         seconds = secondsTotal % 60;
                         timerLabel.setText(String.format("%02d", minutes) + ":" + String.format("%02d", seconds));
+
+                        //Makes alert message blink when there are 10 seconds left on the timer
+                        if (secondsTotal == 10) {
+                            new Thread(() -> {
+                                try {
+                                    while (true) {
+                                        if (alertLabel.getText().trim().isEmpty()) {
+                                            alertText = "Timer Almost Over";
+                                        }
+                                        else {
+                                            alertText = "";
+                                        }
+                                        //Allows for GUI update
+                                        Platform.runLater(() -> alertLabel.setText(alertText));
+                                        //controls the speed of the blinking
+                                        Thread.sleep(200);
+                                        //stop the blinking once timer reaches 0
+                                        if (secondsTotal == 0) {
+                                            Thread.currentThread().interrupt();
+                                            return;
+                                        }
+                                    }
+                                }
+                                catch (InterruptedException ignored) {
+                                }
+                            }).start();
+                        }
+
                         if (secondsTotal == 0) {
                             timeline.stop();
                             studyMessage.setText("Take a Break!");
+                            timerButton.setText("Timer");
                             snackButton.setVisible(true);
+                            alertLabel.setText("");
+                            timerPopup.setState(TimerState.NOTHING);
                         }
                     });
                     timeline.getKeyFrames().add(keyFrame);
                     timeline.setCycleCount(secondsTotal);
                     timeline.play();
-                });
+                    timerPopup.setState(TimerState.COUNTING);
+                    break;
+                case COUNTING:
+                case NOTHING:
+                default:
+                    break;
             }
-            else {
-                timerPopup.hide();
-                inputTimerMinutes.clear();
-                timerButton.setText("Timer");
+        });
+
+        //sets timer in minutes and timer label in mm:ss
+        timerButton.setOnAction(e -> {
+            switch(timerPopup.getState()) {
+                case NOTHING:
+                    timerPopup.show(stage);
+                    timerButton.setText("Set");
+                    snackButton.setVisible(false);
+                    timerPopup.setState(TimerState.CONFIGURING);
+                    break;
+                case CONFIGURING:
+                    break;
+                case COUNTING:
+                    timerButton.setText("Timer");
+                    timeline.stop();
+                    timeline.getKeyFrames().clear();
+                    timerLabel.setText("");
+                    studyMessage.setText("");
+                    timerPopup.setState(TimerState.NOTHING);
+                    break;
+                default:
+                    break;
             }
         });
 
@@ -344,8 +426,8 @@ public class Client extends Application {
         snackPopup.getContent().add(snackPopupColumn);
 
         //setup drink binary tree
-        for (int i = 0; i < drinkArray.length; i++) {
-            drinkTree.insertDrink(drinkArray[i]);
+        for (String s : drinkArray) {
+            drinkTree.insertDrink(s);
         }
 
         //create a new snack
